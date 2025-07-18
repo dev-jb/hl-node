@@ -23,10 +23,10 @@ This repository includes Docker configurations for both Mainnet and Testnet. You
 ```bash
 # Set environment variable and run
 export CHAIN=Mainnet
-docker-compose up -d
+docker compose up -d
 
 # Or run directly with environment variable
-CHAIN=Mainnet docker-compose up -d
+CHAIN=Mainnet docker compose up -d
 ```
 
 #### For Testnet:
@@ -34,10 +34,10 @@ CHAIN=Mainnet docker-compose up -d
 ```bash
 # Set environment variable and run
 export CHAIN=Testnet
-docker-compose up -d
+docker compose up -d
 
 # Or run directly with environment variable
-CHAIN=Testnet docker-compose up -d
+CHAIN=Testnet docker compose up -d
 ```
 
 ### Using the Convenience Script
@@ -93,36 +93,36 @@ For even easier management, use the included `run-node.sh` script:
 
 ```bash
 # Build and start services
-docker-compose up -d
+docker compose up -d
 
 # View logs
-docker-compose logs -f node
+docker compose logs -f node
 
 # Stop services
-docker-compose down
+docker compose down
 
 # Stop and remove volumes (WARNING: This will delete all data)
-docker-compose down -v
+docker compose down -v
 
 # Rebuild and restart
-docker-compose up -d --build
+docker compose up -d --build
 
 # Access container shell
-docker-compose exec node bash
+docker compose exec node bash
 ```
 
 ### Data Persistence
 
 The node data is stored in a Docker volume named `hl-data`. This data persists even if you:
 
-- Stop the containers (`docker-compose down`)
+- Stop the containers (`docker compose down`)
 - Remove the containers
 - Update the Docker images
 
 To completely remove all data, use:
 
 ```bash
-docker-compose down -v
+docker compose down -v
 ```
 
 ### Environment Configuration
@@ -136,13 +136,13 @@ docker-compose up -d
 
 # Method 2: Use .env file
 echo "CHAIN=Mainnet" > .env
-docker-compose up -d
+docker compose up -d
 
 # Method 3: Inline environment variable
-CHAIN=Testnet docker-compose up -d
+CHAIN=Testnet docker compose up -d
 
 # Method 4: With custom prune hours
-CHAIN=Mainnet PRUNE_HOURS=24 docker-compose up -d
+CHAIN=Mainnet PRUNE_HOURS=24 docker compose up -d
 ```
 
 ### Custom Configuration
@@ -155,9 +155,9 @@ You can customize the node behavior by modifying the `override_gossip_config.jso
 
 ### Troubleshooting
 
-- **Check container status**: `docker-compose ps`
-- **View logs**: `docker-compose logs -f node`
-- **Rebuild if needed**: `docker-compose up -d --build`
+- **Check container status**: `docker compose ps`
+- **View logs**: `docker compose logs -f node`
+- **Rebuild if needed**: `docker compose up -d --build`
 - **Check volume usage**: `docker volume ls` and `docker volume inspect hl-data`
 
 ---

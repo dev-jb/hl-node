@@ -15,8 +15,6 @@ services:
       - ./override_gossip_config.json:/home/hluser/override_gossip_config.json:ro
     environment:
       - CHAIN=${CHAIN:-Mainnet}
-    profiles:
-      - ${CHAIN:-Mainnet}
 
   pruner:
     restart: unless-stopped
@@ -25,8 +23,6 @@ services:
       - hl-data:/home/hluser/hl
     environment:
       - PRUNE_HOURS=${PRUNE_HOURS:-48}
-    profiles:
-      - ${CHAIN:-Mainnet}
 
 volumes:
   hl-data:
