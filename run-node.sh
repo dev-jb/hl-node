@@ -1,13 +1,14 @@
 #!/bin/bash
 
 # HyperLiquid Node Runner Script
-# Usage: ./run-node.sh [mainnet|testnet] [start|stop|logs|restart]
+# Usage: ./run-node.sh [mainnet|testnet] [start|stop|logs|restart] [prune_hours]
 
 set -e
 
 # Default values
 CHAIN=${1:-mainnet}
 ACTION=${2:-start}
+PRUNE_HOURS=${3:-48}
 
 # Validate inputs
 if [[ "$CHAIN" != "mainnet" && "$CHAIN" != "testnet" ]]; then
@@ -26,12 +27,13 @@ fi
 echo "HyperLiquid Node Runner"
 echo "Chain: $CHAIN ($DOCKER_CHAIN)"
 echo "Action: $ACTION"
+echo "Prune Hours: $PRUNE_HOURS"
 echo ""
 
 case $ACTION in
     start)
         echo "Starting $CHAIN node..."
-        CHAIN=$DOCKER_CHAIN docker-compose up -d
+        CHAIN=$DOCKER_CHAIN PRUNE_HOURS=$PRUNE_HOURS docker-compose up -d
         echo "Node started! Use './run-node.sh $CHAIN logs' to view logs"
         ;;
     stop)
@@ -42,7 +44,7 @@ case $ACTION in
     restart)
         echo "Restarting $CHAIN node..."
         CHAIN=$DOCKER_CHAIN docker-compose down
-        CHAIN=$DOCKER_CHAIN docker-compose up -d
+        CHAIN=$DOCKER_CHAIN PRUNE_HOURS=$PRUNE_HOURS docker-compose up -d
         echo "Node restarted!"
         ;;
     logs)
@@ -56,7 +58,7 @@ case $ACTION in
     rebuild)
         echo "Rebuilding and starting $CHAIN node..."
         CHAIN=$DOCKER_CHAIN docker-compose down
-        CHAIN=$DOCKER_CHAIN docker-compose up -d --build
+        CHAIN=$DOCKER_CHAIN PRUNE_HOURS=$PRUNE_HOURS docker-compose up -d --build
         echo "Node rebuilt and started!"
         ;;
     *)

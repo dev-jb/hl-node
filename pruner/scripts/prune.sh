@@ -27,8 +27,11 @@ for name in "${EXCLUDES[@]}"; do
     EXCLUDE_EXPR+=" ! -name \"$name\""
 done
 
-# Delete data older than 48 hours = 60 minutes * 48 hours
-HOURS=$((60*48))
+# Delete data older than configured hours (default: 48 hours)
+# Can be overridden by PRUNE_HOURS environment variable
+PRUNE_HOURS=${PRUNE_HOURS:-48}
+HOURS=$((60*PRUNE_HOURS))
+echo "$(date): Pruning data older than $PRUNE_HOURS hours ($HOURS minutes)" >> /proc/1/fd/1
 eval "find \"$DATA_PATH\" -mindepth 1 -depth -mmin +$HOURS -type f $EXCLUDE_EXPR -delete"
 
 # Get directory size after pruning

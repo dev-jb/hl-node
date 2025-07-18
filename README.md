@@ -45,11 +45,14 @@ CHAIN=Testnet docker-compose up -d
 For even easier management, use the included `run-node.sh` script:
 
 ```bash
-# Start mainnet node
+# Start mainnet node (default: 48 hours pruning)
 ./run-node.sh mainnet start
 
-# Start testnet node
-./run-node.sh testnet start
+# Start testnet node with custom prune hours (e.g., 24 hours)
+./run-node.sh testnet start 24
+
+# Start mainnet node with 72 hours pruning
+./run-node.sh mainnet start 72
 
 # View logs
 ./run-node.sh mainnet logs
@@ -59,7 +62,7 @@ For even easier management, use the included `run-node.sh` script:
 ./run-node.sh mainnet stop
 ./run-node.sh testnet stop
 
-# Restart node
+# Restart node (maintains prune hours setting)
 ./run-node.sh mainnet restart
 ./run-node.sh testnet restart
 
@@ -71,6 +74,12 @@ For even easier management, use the included `run-node.sh` script:
 ./run-node.sh mainnet rebuild
 ./run-node.sh testnet rebuild
 ```
+
+**Prune Hours Configuration:**
+
+- Default: 48 hours (2 days)
+- Can be customized as the third parameter: `./run-node.sh [chain] [action] [hours]`
+- Examples: `24` (1 day), `72` (3 days), `168` (1 week)
 
 ### Docker Features
 
@@ -131,6 +140,9 @@ docker-compose up -d
 
 # Method 3: Inline environment variable
 CHAIN=Testnet docker-compose up -d
+
+# Method 4: With custom prune hours
+CHAIN=Mainnet PRUNE_HOURS=24 docker-compose up -d
 ```
 
 ### Custom Configuration
