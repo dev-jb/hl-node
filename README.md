@@ -1,6 +1,7 @@
 # Running a node
 
 ## Machine Specs
+
 Recommended minimum hardware: 4 CPU cores, 32 GB RAM, 200 GB disk.
 
 Currently only Ubuntu 24.04 is supported.
@@ -11,9 +12,148 @@ For lowest latency, run the node in Tokyo, Japan.
 
 ---
 
-## Setup
+## Run Using Docker (Recommended)
+
+### Quick Start
+
+This repository includes Docker configurations for both Mainnet and Testnet. You can run either network using environment variables.
+
+#### For Mainnet:
+
+```bash
+# Set environment variable and run
+export CHAIN=Mainnet
+docker-compose up -d
+
+# Or run directly with environment variable
+CHAIN=Mainnet docker-compose up -d
+```
+
+#### For Testnet:
+
+```bash
+# Set environment variable and run
+export CHAIN=Testnet
+docker-compose up -d
+
+# Or run directly with environment variable
+CHAIN=Testnet docker-compose up -d
+```
+
+### Using the Convenience Script
+
+For even easier management, use the included `run-node.sh` script:
+
+```bash
+# Start mainnet node
+./run-node.sh mainnet start
+
+# Start testnet node
+./run-node.sh testnet start
+
+# View logs
+./run-node.sh mainnet logs
+./run-node.sh testnet logs
+
+# Stop node
+./run-node.sh mainnet stop
+./run-node.sh testnet stop
+
+# Restart node
+./run-node.sh mainnet restart
+./run-node.sh testnet restart
+
+# Check status
+./run-node.sh mainnet status
+./run-node.sh testnet status
+
+# Rebuild and restart
+./run-node.sh mainnet rebuild
+./run-node.sh testnet rebuild
+```
+
+### Docker Features
+
+- **Unified Configuration**: Single Dockerfile and docker-compose.yml for both networks
+- **Persistent Data**: Data is stored in Docker volumes and persists across container restarts
+- **Automatic Pruning**: Includes a pruner service to manage disk space
+- **Gossip Configuration**: Mounts `override_gossip_config.json` for custom peer configuration
+- **Port Exposure**: Exposes gossip ports (4000-4010) and RPC ports (3000-3010)
+
+### Docker Commands
+
+```bash
+# Build and start services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f node
+
+# Stop services
+docker-compose down
+
+# Stop and remove volumes (WARNING: This will delete all data)
+docker-compose down -v
+
+# Rebuild and restart
+docker-compose up -d --build
+
+# Access container shell
+docker-compose exec node bash
+```
+
+### Data Persistence
+
+The node data is stored in a Docker volume named `hl-data`. This data persists even if you:
+
+- Stop the containers (`docker-compose down`)
+- Remove the containers
+- Update the Docker images
+
+To completely remove all data, use:
+
+```bash
+docker-compose down -v
+```
+
+### Environment Configuration
+
+You can set the chain type using environment variables:
+
+```bash
+# Method 1: Export environment variable
+export CHAIN=Mainnet
+docker-compose up -d
+
+# Method 2: Use .env file
+echo "CHAIN=Mainnet" > .env
+docker-compose up -d
+
+# Method 3: Inline environment variable
+CHAIN=Testnet docker-compose up -d
+```
+
+### Custom Configuration
+
+You can customize the node behavior by modifying the `override_gossip_config.json` file. This file is mounted into the container and allows you to:
+
+- Specify custom root node IPs
+- Configure peer discovery settings
+- Set reserved peer IPs
+
+### Troubleshooting
+
+- **Check container status**: `docker-compose ps`
+- **View logs**: `docker-compose logs -f node`
+- **Rebuild if needed**: `docker-compose up -d --build`
+- **Check volume usage**: `docker volume ls` and `docker volume inspect hl-data`
+
+---
+
+## Manual Setup (Alternative)
 
 ### Configure Chain
+
 For testing, configure your chain as follows:
 
 - **Testnet**:
@@ -26,6 +166,7 @@ For testing, configure your chain as follows:
   ```
 
 ### Download the Visor Binary
+
 The visor binary spawns and manages the child node process.
 
 - **Testnet**:
@@ -44,6 +185,7 @@ The visor binary spawns and manages the child node process.
 Binaries are signed for extra security. The public key is found at `pub_key.asc` in this repo.
 
 1. **Import the Key:**
+
    ```bash
    gpg --import pub_key.asc
    ```
@@ -88,12 +230,14 @@ For more information about examples and all the data types that can be written, 
 
 - **Transaction Blocks:**
   Blocks parsed as transactions are streamed to:
+
   ```
   ~/hl/data/replica_cmds/{start_time}/{date}/{height}
   ```
 
 - **State Snapshots:**
   State snapshots are saved every 10,000 blocks to:
+
   ```
   ~/hl/data/periodic_abci_states/{date}/{height}.rmp
   ```
@@ -110,9 +254,10 @@ For more information about examples and all the data types that can be written, 
     ```
 
   To compute L4 book snapshots (full onchain order information) from a state snapshot file:
-    ```bash
-    ./hl-node --chain <chain> compute-l4-snapshots <abci-state-path> <out-path>
-    ```
+
+  ```bash
+  ./hl-node --chain <chain> compute-l4-snapshots <abci-state-path> <out-path>
+  ```
 
 ---
 
@@ -136,6 +281,7 @@ When running validators or non-validators, you can use the following flags. The 
 - `--serve-info`: Enables local HTTP server to handle info requests (see next section).
 
 For example, to run a non-validator with all flags enabled:
+
 ```bash
 ~/hl-visor run-non-validator --write-trades --write-order-statuses --serve-eth-rpc
 ```
@@ -147,11 +293,13 @@ For example, to run a non-validator with all flags enabled:
 ## EVM and Info servers
 
 Enable the EVM JSON-RPC by adding the `--serve-eth-rpc` flag:
+
 ```bash
 ~/hl-visor run-non-validator --serve-eth-rpc
 ```
 
 Once running, you can send RPC requests. For example, to retrieve the latest block:
+
 ```bash
 curl -X POST --header 'Content-Type: application/json' --data '{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["latest",false],"id":1}' http://localhost:3001/evm
 ```
@@ -162,6 +310,7 @@ Running a local info server can help with rate limits and reduces trust assumpti
 Currently the local server only supports a subset of requests that are entirely a function of local state. In particular, historical time series queries and websockets are not currently supported. The `--write-*` flags on the node can be used for historical and streaming purposes.
 
 The currently supported info requests on the local server are
+
 ```
     meta
     spotMeta
@@ -205,6 +354,7 @@ To ensure that the server information is up to date, `exchangeStatus` can be pin
 ## Delegation
 
 The native token on Testnet is **HYPE** with token address:
+
 ```
 0x7317beb7cceed72ef0b346074cc8e7ab
 ```
@@ -213,6 +363,7 @@ The native token on Testnet is **HYPE** with token address:
 
 1. **Staking Deposit:**
    Transfer tokens from your spot balance into the staking balance:
+
    - **Testnet:**
      ```bash
      ./hl-node --chain Testnet --key <delegator-wallet-key> staking-deposit <wei>
@@ -224,6 +375,7 @@ The native token on Testnet is **HYPE** with token address:
 
 2. **Delegate Tokens:**
    Delegate tokens to a validator:
+
    - **Testnet:**
      ```bash
      ./hl-node --chain Testnet --key <delegator-wallet-key> delegate <validator-address> <amount-in-wei>
@@ -236,6 +388,7 @@ The native token on Testnet is **HYPE** with token address:
    Optionally, add `--undelegate` to undelegate from the validator.
 
 3. **View Delegations:**
+
    - **Testnet:**
      ```bash
      curl -X POST --header "Content-Type: application/json" --data '{ "type": "delegations", "user": <delegator-address>}' https://api.hyperliquid-testnet.xyz/info
@@ -253,26 +406,29 @@ The native token on Testnet is **HYPE** with token address:
      ```bash
      ./hl-node --chain Mainnet --key <delegator-wallet-key> staking-withdrawal <wei>
      ```
-   The withdrawal will reflect in the exchange balance automatically once the unbonding period ends.
+     The withdrawal will reflect in the exchange balance automatically once the unbonding period ends.
 
 ---
 
 ## Running a Validating Node
 
-*Note: The non-validating node setup above is a prerequisite for running a validating node.*
+_Note: The non-validating node setup above is a prerequisite for running a validating node._
 
 ### Generate Config
 
 Generate two wallets:
+
 - **Validator wallet:** Holds funds and receives delegation rewards (cold wallet).
 - **Signer wallet:** Used solely for signing consensus messages (hot wallet).
 
 They can be the same wallet for simplicity.
 
 Create a config file for the signer wallet:
+
 ```bash
 echo '{"key": "<signer-key>"}' > ~/hl/hyperliquid_data/node_config.json
 ```
+
 Keep both `<signer-key>` and `<validator-key>` secure.
 
 ### Ensure Validator User Exists
@@ -297,11 +453,13 @@ The validator set on Testnet is entirely permissionless.
 - **Register and Self-Delegate:**
 
   On **Testnet** (self-delegate 10_000, i.e. 1000000000000 wei):
+
   ```bash
   ~/hl-node --chain Testnet --key <validator-key> send-signed-action '{"type": "CValidatorAction", "register": {"profile": {"node_ip": {"Ip": "1.2.3.4"}, "signer": "<signer-address>", "name": "...", "description": "..." }, "initial_wei": 1000000000000}}'
   ```
 
   On **Mainnet**:
+
   ```bash
   ~/hl-node --chain Mainnet --key <validator-key> send-signed-action '{"type": "CValidatorAction", "register": {"profile": {"node_ip": {"Ip": "1.2.3.4"}, "signer": "<signer-address>", "name": "...", "description": "..." }, "initial_wei": 1000000000000}}'
   ```
@@ -320,6 +478,7 @@ Make sure ports 4000-4010 are open to other validators. (Currently, only ports 4
   ```
 
 > **Debugging Tip:** To see stderr immediately and disable restarts, run:
+>
 > - **Testnet:**
 >   ```bash
 >   ./hl-node --chain Testnet run-validator
@@ -330,6 +489,7 @@ Make sure ports 4000-4010 are open to other validators. (Currently, only ports 4
 >   ```
 
 For faster bootstrapping, use a known reliable peer. `reserved_peer_ips` can be set by the peer to always allow incoming connections from specific IPs.
+
 - **Testnet:**
   ```bash
   echo '{ "root_node_ips": [{"Ip": "1.2.3.4"}], "try_new_peers": false, "chain": "Testnet", "reserved_peer_ips": [] }' > ~/override_gossip_config.json
@@ -342,9 +502,11 @@ For faster bootstrapping, use a known reliable peer. `reserved_peer_ips` can be 
 ### Begin Validating
 
 When first registered or after changing your IP, the validator is automatically jailed (i.e. it does not participate in consensus initially). Once you see the expected outputs streaming to:
+
 ```
 ~/hl/data/node_logs/consensus/hourly/{date}/{hour}
 ```
+
 send the following action to begin participating in consensus:
 
 - **Testnet:**
@@ -403,6 +565,7 @@ Sentry nodes should be run by the validator themselves, and can be used as publi
 The directory `node_logs/consensus` contains most messages sent and received by the consensus algorithm, which is often useful for debugging.
 
 For example, to check whether Vote messages were sent to validator `0x5ac9...` around `2024-12-10T09:25`, you can run:
+
 ```bash
 grep destination...0x5ac9 ~/hl/data/node_logs/consensus/hourly/20241210/9 | grep T09:25 | grep Vote
 ```
@@ -410,6 +573,7 @@ grep destination...0x5ac9 ~/hl/data/node_logs/consensus/hourly/20241210/9 | grep
 Validators with issues may experience timeouts on rounds when they do not propose a block. Searching for `suspect` in the consensus logs can help pinpoint the cause, which is often correlated with jailing.
 
 Crash logs from the child process are written to:
+
 ```
 ~/hl/data/visor_child_stderr/{date}/{node_binary_index}
 ```
@@ -439,6 +603,7 @@ To change your validator profile (for example, updating your IP address):
   ```
 
 Other validator profile options include:
+
 - `disable_delegations`: Disables delegations when set to true.
 - `commission_bps`: Sets the percentage of staking rewards the validator takes before the remainder is distributed proportionally to stake delegated (defaults to 10000, meaning all rewards go to the validator, and is not allowed to increase).
 - `signer`: Allows the validator to set a hot address for signing consensus messages.
@@ -448,6 +613,7 @@ Other validator profile options include:
 ## Mainnet Non-Validator Seed Peers
 
 The community runs several independent root peers for non-validators to connect to on Mainnet. To run a non-validator on Mainnet, add at least one of these IP addresses to your `~/override_gossip_config.json`:
+
 ```
 operator_name,root_ips
 ASXN,20.188.6.225
@@ -485,6 +651,7 @@ HypurrCorea: SKYGG x DeSpread,8.220.213.65
 ## Troubleshooting
 
 Crash logs from the child process are written to:
+
 ```
 ~/hl/data/visor_child_stderr/{date}/{node_binary_index}
 ```

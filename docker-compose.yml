@@ -1,20 +1,30 @@
-name: "hyperliquid"
+version: '3.8'
 
 services:
   node:
     restart: unless-stopped
-    build: .
+    build:
+      context: .
+      args:
+        CHAIN: ${CHAIN:-Mainnet}
     ports:
-      - "4000-4010:4000-4010"
+      - '4000-4010:4000-4010'
+      - '3000-3010:3000-3010'
     volumes:
-      - hl-data:/home/hluser/hl/data
+      - hl-data:/home/hluser/hl
+      - ./override_gossip_config.json:/home/hluser/override_gossip_config.json:ro
+    environment:
+      - CHAIN=${CHAIN:-Mainnet}
+    profiles:
+      - ${CHAIN:-Mainnet}
 
   pruner:
     restart: unless-stopped
     build: ./pruner
     volumes:
-      - hl-data:/home/hluser/hl/data
-
+      - hl-data:/home/hluser/hl
+    profiles:
+      - ${CHAIN:-Mainnet}
 
 volumes:
   hl-data:
