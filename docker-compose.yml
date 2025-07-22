@@ -32,7 +32,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
-      - LOCAL_RPC_URL=http://node:3001/evm
+      - LOCAL_RPC_URL=http://hl-node-node-1:3001/evm
       - EXTERNAL_RPC_URL=${EXTERNAL_RPC_URL:-https://rpc.hyperliquid.xyz}
       - NODE_CONTAINER_NAME=${NODE_CONTAINER_NAME:-hl-node-node-1}
     depends_on:

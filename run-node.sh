@@ -67,6 +67,10 @@ case $ACTION in
             -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
             https://rpc.hyperliquid.xyz | jq . 2>/dev/null || echo "Failed to connect to external RPC"
         ;;
+    monitor-logs)
+        echo "Showing monitor logs for $CHAIN..."
+        CHAIN=$DOCKER_CHAIN docker compose logs -f monitor
+        ;;
     status)
         echo "Status of $CHAIN node:"
         CHAIN=$DOCKER_CHAIN docker compose ps
@@ -93,7 +97,7 @@ case $ACTION in
         ;;
     *)
         echo "Error: Unknown action '$ACTION'"
-        echo "Available actions: start, stop, restart, logs, pruner-logs, status, rebuild, monitor, config, test-rpc"
+        echo "Available actions: start, stop, restart, logs, pruner-logs, monitor-logs, status, rebuild, monitor, config, test-rpc"
         echo "Usage: $0 [mainnet|testnet] [start|stop|logs|restart|monitor|config|test-rpc]"
         exit 1
         ;;

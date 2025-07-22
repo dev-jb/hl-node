@@ -92,6 +92,10 @@ For even easier management, use the included `run-node.sh` script:
 # Test RPC connectivity
 ./run-node.sh mainnet test-rpc
 ./run-node.sh testnet test-rpc
+
+# View monitor logs
+./run-node.sh mainnet monitor-logs
+./run-node.sh testnet monitor-logs
 ```
 
 **Prune Hours Configuration:**

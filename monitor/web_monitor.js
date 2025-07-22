@@ -33,18 +33,31 @@ async function executeCommand(command) {
 // Get container health status
 async function getContainerStatus() {
   try {
+    console.log(`🔍 Checking container status for: ${NODE_CONTAINER_NAME}`);
+
+    // First, let's list all containers to see what's available
+    const listResult = await executeCommand(
+      'docker ps -a --format "table {{.Names}}\t{{.Status}}"'
+    );
+    console.log('📋 Available containers:', listResult);
+
     const result = await executeCommand(
       `docker inspect --format='{{.State.Status}}' ${NODE_CONTAINER_NAME}`
     );
+    console.log(`📦 Container inspect result:`, result);
+
     if (result.success) {
       const status = result.output.trim().replace(/'/g, '');
+      console.log(`✅ Container status: ${status}`);
       return {
         status: status,
         running: status === 'running',
       };
     }
+    console.log(`❌ Container not found or inspect failed`);
     return { status: 'not_found', running: false };
   } catch (error) {
+    console.log(`💥 Container status error:`, error);
     return { status: 'error', running: false, error: error.message };
   }
 }
@@ -52,6 +65,8 @@ async function getContainerStatus() {
 // Get latest block number from RPC
 async function getBlockNumber(rpcUrl, rpcName) {
   try {
+    console.log(`🔗 Attempting to get block from ${rpcName}: ${rpcUrl}`);
+
     const response = await axios.post(
       rpcUrl,
       {
@@ -66,9 +81,12 @@ async function getBlockNumber(rpcUrl, rpcName) {
       }
     );
 
+    console.log(`📡 ${rpcName} response:`, response.data);
+
     if (response.data && response.data.result) {
       const blockHex = response.data.result;
       const blockDecimal = parseInt(blockHex, 16);
+      console.log(`✅ ${rpcName} block: ${blockDecimal} (${blockHex})`);
       return {
         success: true,
         block: blockDecimal,
@@ -76,8 +94,10 @@ async function getBlockNumber(rpcUrl, rpcName) {
       };
     }
 
+    console.log(`❌ ${rpcName} failed: No result in response`);
     return { success: false, error: `Failed to get block from ${rpcName}` };
   } catch (error) {
+    console.log(`💥 ${rpcName} error:`, error.message);
     return { success: false, error: error.message };
   }
 }
@@ -85,26 +105,40 @@ async function getBlockNumber(rpcUrl, rpcName) {
 // Get disk usage information
 async function getDiskUsage() {
   try {
+    console.log(
+      `💾 Attempting to get disk usage for container: ${NODE_CONTAINER_NAME}`
+    );
+
     const result = await executeCommand(
       `docker exec ${NODE_CONTAINER_NAME} df -h /home/hluser/hl`
     );
+    console.log(`💾 Disk usage result:`, result);
+
     if (result.success) {
       const lines = result.output.trim().split('\n');
+      console.log(`💾 Disk usage lines:`, lines);
+
       if (lines.length >= 2) {
         const parts = lines[1].split(/\s+/);
+        console.log(`💾 Disk usage parts:`, parts);
+
         if (parts.length >= 5) {
-          return {
+          const diskInfo = {
             success: true,
             total: parts[1],
             used: parts[2],
             available: parts[3],
             usage_percent: parts[4].replace('%', ''),
           };
+          console.log(`✅ Disk usage:`, diskInfo);
+          return diskInfo;
         }
       }
     }
+    console.log(`❌ Could not get disk usage`);
     return { success: false, error: 'Could not get disk usage' };
   } catch (error) {
+    console.log(`💥 Disk usage error:`, error);
     return { success: false, error: error.message };
   }
 }
@@ -112,17 +146,27 @@ async function getDiskUsage() {
 // Get recent container logs
 async function getRecentLogs() {
   try {
+    console.log(
+      `📋 Attempting to get logs for container: ${NODE_CONTAINER_NAME}`
+    );
+
     const result = await executeCommand(
       `docker logs --tail 20 ${NODE_CONTAINER_NAME}`
     );
+    console.log(`📋 Logs result:`, result);
+
     if (result.success) {
+      const logs = result.output.trim().split('\n');
+      console.log(`✅ Got ${logs.length} log lines`);
       return {
         success: true,
-        logs: result.output.trim().split('\n'),
+        logs: logs,
       };
     }
+    console.log(`❌ Could not get logs`);
     return { success: false, error: 'Could not get logs' };
   } catch (error) {
+    console.log(`💥 Logs error:`, error);
     return { success: false, error: error.message };
   }
 }
@@ -134,21 +178,31 @@ app.get('/', (req, res) => {
 
 app.get('/api/status', async (req, res) => {
   try {
+    console.log('🔄 API Status request received');
+
     const containerStatus = await getContainerStatus();
+    console.log('📦 Container status completed');
+
     const localBlock = await getBlockNumber(LOCAL_RPC_URL, 'Local RPC');
+    console.log('🔗 Local block check completed');
+
     const externalBlock = await getBlockNumber(
       EXTERNAL_RPC_URL,
       'External RPC'
     );
+    console.log('🌐 External block check completed');
+
     const diskUsage = await getDiskUsage();
+    console.log('💾 Disk usage check completed');
 
     // Calculate block difference
     let blockDifference = null;
     if (localBlock.success && externalBlock.success) {
       blockDifference = externalBlock.block - localBlock.block;
+      console.log(`📊 Block difference calculated: ${blockDifference}`);
     }
 
-    res.json({
+    const response = {
       timestamp: new Date().toISOString(),
       container: containerStatus,
       blocks: {
@@ -157,8 +211,12 @@ app.get('/api/status', async (req, res) => {
         difference: blockDifference,
       },
       disk: diskUsage,
-    });
+    };
+
+    console.log('✅ API Status response prepared');
+    res.json(response);
   } catch (error) {
+    console.log('💥 API Status error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -175,6 +233,24 @@ app.get('/api/logs', async (req, res) => {
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Debug endpoint
+app.get('/debug', (req, res) => {
+  res.json({
+    timestamp: new Date().toISOString(),
+    environment: {
+      LOCAL_RPC_URL,
+      EXTERNAL_RPC_URL,
+      NODE_CONTAINER_NAME,
+      PORT: process.env.PORT || 8080,
+    },
+    configuration: {
+      localRpcUrl: LOCAL_RPC_URL,
+      externalRpcUrl: EXTERNAL_RPC_URL,
+      nodeContainerName: NODE_CONTAINER_NAME,
+    },
+  });
 });
 
 // Start server
