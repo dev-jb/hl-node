@@ -69,6 +69,11 @@ case $ACTION in
         ;;
     monitor-logs)
         echo "Showing monitor logs for $CHAIN..."
+        echo "Note: Use 'docker compose logs -f monitor' directly for real-time logs"
+        CHAIN=$DOCKER_CHAIN docker compose logs monitor
+        ;;
+    monitor-logs-follow)
+        echo "Showing real-time monitor logs for $CHAIN..."
         CHAIN=$DOCKER_CHAIN docker compose logs -f monitor
         ;;
     status)
@@ -97,7 +102,7 @@ case $ACTION in
         ;;
     *)
         echo "Error: Unknown action '$ACTION'"
-        echo "Available actions: start, stop, restart, logs, pruner-logs, monitor-logs, status, rebuild, monitor, config, test-rpc"
+        echo "Available actions: start, stop, restart, logs, pruner-logs, monitor-logs, monitor-logs-follow, status, rebuild, monitor, config, test-rpc"
         echo "Usage: $0 [mainnet|testnet] [start|stop|logs|restart|monitor|config|test-rpc]"
         exit 1
         ;;

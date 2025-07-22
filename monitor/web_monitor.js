@@ -41,6 +41,30 @@ async function getContainerStatus() {
     );
     console.log('📋 Available containers:', listResult);
 
+    // Try to find the container by name in the list
+    if (listResult.success && listResult.output) {
+      const lines = listResult.output.trim().split('\n');
+      console.log('📋 Container list lines:', lines);
+
+      const containerLine = lines.find((line) =>
+        line.includes(NODE_CONTAINER_NAME)
+      );
+      if (containerLine) {
+        console.log(`✅ Found container in list: ${containerLine}`);
+        const parts = containerLine.split(/\s+/);
+        const status = parts[1] || 'unknown';
+        const isRunning = status.includes('Up');
+        console.log(
+          `✅ Container status from list: ${status}, running: ${isRunning}`
+        );
+        return {
+          status: status,
+          running: isRunning,
+        };
+      }
+    }
+
+    // Fallback to docker inspect
     const result = await executeCommand(
       `docker inspect --format='{{.State.Status}}' ${NODE_CONTAINER_NAME}`
     );
@@ -253,10 +277,64 @@ app.get('/debug', (req, res) => {
   });
 });
 
+// Docker test endpoint
+app.get('/docker-test', async (req, res) => {
+  try {
+    console.log('🔧 Docker test endpoint called');
+
+    // Test basic Docker access
+    const versionResult = await executeCommand(
+      'docker version --format "{{.Server.Version}}"'
+    );
+    console.log('🔧 Docker version result:', versionResult);
+
+    // Test container listing
+    const psResult = await executeCommand('docker ps --format "{{.Names}}"');
+    console.log('🔧 Docker ps result:', psResult);
+
+    // Test specific container
+    const inspectResult = await executeCommand(
+      `docker inspect --format='{{.State.Status}}' ${NODE_CONTAINER_NAME}`
+    );
+    console.log('🔧 Docker inspect result:', inspectResult);
+
+    res.json({
+      timestamp: new Date().toISOString(),
+      dockerVersion: versionResult,
+      containerList: psResult,
+      containerInspect: inspectResult,
+      targetContainer: NODE_CONTAINER_NAME,
+    });
+  } catch (error) {
+    console.log('💥 Docker test error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Test Docker socket access on startup
+async function testDockerAccess() {
+  try {
+    console.log('🔧 Testing Docker socket access...');
+    const testResult = await executeCommand(
+      'docker version --format "{{.Server.Version}}"'
+    );
+    if (testResult.success) {
+      console.log(`✅ Docker access OK, version: ${testResult.output.trim()}`);
+    } else {
+      console.log(`❌ Docker access failed: ${testResult.error}`);
+    }
+  } catch (error) {
+    console.log(`💥 Docker test error: ${error.message}`);
+  }
+}
+
 // Start server
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', async () => {
   console.log(`🚀 HyperLiquid Node Monitor running on port ${PORT}`);
   console.log(`📡 Local RPC: ${LOCAL_RPC_URL}`);
   console.log(`🌐 External RPC: ${EXTERNAL_RPC_URL}`);
   console.log(`📦 Container: ${NODE_CONTAINER_NAME}`);
+
+  // Test Docker access on startup
+  await testDockerAccess();
 });

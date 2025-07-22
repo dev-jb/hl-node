@@ -9,11 +9,14 @@ RUN apk add --no-cache \
     curl \
     jq \
     procps \
-    docker-cli
+    docker-cli \
+    shadow
 
-# Create user
+# Create user and add to docker group
 RUN addgroup -g $USER_GID $USERNAME \
-    && adduser -u $USER_UID -G $USERNAME -s /bin/sh -D $USERNAME
+    && adduser -u $USER_UID -G $USERNAME -s /bin/sh -D $USERNAME \
+    && addgroup -g 999 docker \
+    && adduser $USERNAME docker
 
 # Set working directory
 WORKDIR /home/$USERNAME
