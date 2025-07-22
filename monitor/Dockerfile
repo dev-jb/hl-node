@@ -12,11 +12,9 @@ RUN apk add --no-cache \
     docker-cli \
     shadow
 
-# Create user and add to docker group
+# Create user
 RUN addgroup -g $USER_GID $USERNAME \
-    && adduser -u $USER_UID -G $USERNAME -s /bin/sh -D $USERNAME \
-    && addgroup -g 999 docker \
-    && adduser $USERNAME docker
+    && adduser -u $USER_UID -G $USERNAME -s /bin/sh -D $USERNAME
 
 # Set working directory
 WORKDIR /home/$USERNAME
@@ -34,10 +32,8 @@ COPY public/ ./public/
 # Change ownership
 RUN chown -R $USERNAME:$USERNAME /home/$USERNAME
 
-USER $USERNAME
-
 # Expose monitoring port
 EXPOSE 8080
 
-# Start monitoring
+# Start monitoring (run as root for Docker access)
 CMD ["node", "web_monitor.js"] 

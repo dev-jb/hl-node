@@ -15,6 +15,8 @@ const LOCAL_RPC_URL = process.env.LOCAL_RPC_URL || 'http://node:3001/evm';
 const EXTERNAL_RPC_URL =
   process.env.EXTERNAL_RPC_URL || 'https://rpc.hyperliquid.xyz';
 const NODE_CONTAINER_NAME = process.env.NODE_CONTAINER_NAME || 'hl-node-node-1';
+const ARCHIVE_LOCAL_RPC_URL =
+  process.env.ARCHIVE_LOCAL_RPC_URL || 'http://archive-node-1:8545';
 
 // Middleware
 app.use(express.json());
@@ -216,14 +218,27 @@ app.get('/api/status', async (req, res) => {
     );
     console.log('🌐 External block check completed');
 
+    const archiveLocalBlock = await getBlockNumber(
+      ARCHIVE_LOCAL_RPC_URL,
+      'Archive Local'
+    );
+    console.log('🗄️ Archive Local block check completed');
+
     const diskUsage = await getDiskUsage();
     console.log('💾 Disk usage check completed');
 
-    // Calculate block difference
+    // Calculate block differences
     let blockDifference = null;
     if (localBlock.success && externalBlock.success) {
       blockDifference = externalBlock.block - localBlock.block;
       console.log(`📊 Block difference calculated: ${blockDifference}`);
+    }
+    let archiveDifference = null;
+    if (localBlock.success && archiveLocalBlock.success) {
+      archiveDifference = archiveLocalBlock.block - localBlock.block;
+      console.log(
+        `📊 Archive block difference calculated: ${archiveDifference}`
+      );
     }
 
     const response = {
@@ -233,6 +248,8 @@ app.get('/api/status', async (req, res) => {
         local: localBlock,
         external: externalBlock,
         difference: blockDifference,
+        archiveLocal: archiveLocalBlock,
+        archiveDifference: archiveDifference,
       },
       disk: diskUsage,
     };
@@ -266,12 +283,14 @@ app.get('/debug', (req, res) => {
     environment: {
       LOCAL_RPC_URL,
       EXTERNAL_RPC_URL,
+      ARCHIVE_LOCAL_RPC_URL,
       NODE_CONTAINER_NAME,
       PORT: process.env.PORT || 8080,
     },
     configuration: {
       localRpcUrl: LOCAL_RPC_URL,
       externalRpcUrl: EXTERNAL_RPC_URL,
+      archiveLocalRpcUrl: ARCHIVE_LOCAL_RPC_URL,
       nodeContainerName: NODE_CONTAINER_NAME,
     },
   });

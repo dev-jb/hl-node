@@ -198,30 +198,48 @@
         const local = blocks.local;
         const external = blocks.external;
         const difference = blocks.difference;
+        const archiveLocal = blocks.archiveLocal;
+        const archiveDifference = blocks.archiveDifference;
 
         const statusClass = getBlockStatusClass(difference);
+        const archiveStatusClass = getBlockStatusClass(archiveDifference);
 
         let localBlockText = local.success ? local.block : 'N/A';
         let externalBlockText = external.success ? external.block : 'N/A';
         let differenceText = difference !== null ? difference : 'N/A';
+        let archiveBlockText =
+          archiveLocal && archiveLocal.success ? archiveLocal.block : 'N/A';
+        let archiveDiffText =
+          archiveDifference !== null ? archiveDifference : 'N/A';
 
         document.getElementById('block-status').innerHTML = `
-                <div class="metric">
-                    <span class="metric-label">Local Block:</span>
-                    <span class="metric-value">${localBlockText}</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">External Block:</span>
-                    <span class="metric-value">${externalBlockText}</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Difference:</span>
-                    <span class="metric-value">
-                        <span class="status-indicator ${statusClass}"></span>
-                        ${differenceText}
-                    </span>
-                </div>
-            `;
+    <div class="metric">
+      <span class="metric-label">Local Block:</span>
+      <span class="metric-value">${localBlockText}</span>
+    </div>
+    <div class="metric">
+      <span class="metric-label">External Block:</span>
+      <span class="metric-value">${externalBlockText}</span>
+    </div>
+    <div class="metric">
+      <span class="metric-label">Difference:</span>
+      <span class="metric-value">
+        <span class="status-indicator ${statusClass}"></span>
+        ${differenceText}
+      </span>
+    </div>
+    <div class="metric">
+      <span class="metric-label">Archive Local Block:</span>
+      <span class="metric-value">${archiveBlockText}</span>
+    </div>
+    <div class="metric">
+      <span class="metric-label">Archive Difference:</span>
+      <span class="metric-value">
+        <span class="status-indicator ${archiveStatusClass}"></span>
+        ${archiveDiffText}
+      </span>
+    </div>
+  `;
       }
 
       function updateDiskStatus(data) {

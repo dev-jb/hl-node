@@ -34,6 +34,7 @@ services:
     environment:
       - LOCAL_RPC_URL=http://hl-node-node-1:3001/evm
       - EXTERNAL_RPC_URL=${EXTERNAL_RPC_URL:-https://rpc.hyperliquid.xyz}
+      - ARCHIVE_LOCAL_RPC_URL=${ARCHIVE_LOCAL_RPC_URL:-http://archive-node-1:8545}
       - NODE_CONTAINER_NAME=${NODE_CONTAINER_NAME:-hl-node-node-1}
     depends_on:
       - node
