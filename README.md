@@ -54,6 +54,9 @@ For even easier management, use the included `run-node.sh` script:
 # Start mainnet node with 72 hours pruning
 ./run-node.sh mainnet start 72
 
+# Restart with custom prune hours (must specify hours again)
+./run-node.sh mainnet restart 24
+
 # View logs
 ./run-node.sh mainnet logs
 ./run-node.sh testnet logs
@@ -73,6 +76,22 @@ For even easier management, use the included `run-node.sh` script:
 # Rebuild and restart
 ./run-node.sh mainnet rebuild
 ./run-node.sh testnet rebuild
+
+# Open monitoring dashboard
+./run-node.sh mainnet monitor
+./run-node.sh testnet monitor
+
+# Check configuration
+./run-node.sh mainnet config
+./run-node.sh testnet config
+
+# View pruner logs
+./run-node.sh mainnet pruner-logs
+./run-node.sh testnet pruner-logs
+
+# Test RPC connectivity
+./run-node.sh mainnet test-rpc
+./run-node.sh testnet test-rpc
 ```
 
 **Prune Hours Configuration:**
@@ -80,14 +99,32 @@ For even easier management, use the included `run-node.sh` script:
 - Default: 48 hours (2 days)
 - Can be customized as the third parameter: `./run-node.sh [chain] [action] [hours]`
 - Examples: `24` (1 day), `72` (3 days), `168` (1 week)
+- **Important**: You must specify the hours parameter for all commands to use custom prune hours
+- Example: `./run-node.sh mainnet start 24` (starts with 24-hour pruning)
+
+**Monitoring Dashboard:**
+
+- Web interface available at `http://localhost:8080`
+- Real-time monitoring of container health, block synchronization, and disk usage
+- Compares local RPC block numbers with external RPC
+- Auto-refreshes every 30 seconds
+- Health check endpoint: `http://localhost:8080/health`
+
+**RPC Connectivity:**
+
+- Local RPC endpoint: `http://localhost:3001/evm` (accessible from host)
+- Internal RPC endpoint: `http://node:3001/evm` (accessible from monitor container)
+- External RPC endpoint: `https://rpc.hyperliquid.xyz` (for comparison)
+- Use `./run-node.sh [chain] test-rpc` to test connectivity
 
 ### Docker Features
 
 - **Unified Configuration**: Single Dockerfile and docker-compose.yml for both networks
 - **Persistent Data**: Data is stored in Docker volumes and persists across container restarts
 - **Automatic Pruning**: Includes a pruner service to manage disk space
+- **Real-time Monitoring**: Web-based dashboard for node health and block synchronization
 - **Gossip Configuration**: Mounts `override_gossip_config.json` for custom peer configuration
-- **Port Exposure**: Exposes gossip ports (4000-4010) and RPC ports (3000-3010)
+- **Port Exposure**: Exposes gossip ports (4000-4010), RPC ports (3000-3010), and monitor port (8080)
 
 ### Docker Commands
 

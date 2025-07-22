@@ -51,6 +51,22 @@ case $ACTION in
         echo "Showing logs for $CHAIN node..."
         CHAIN=$DOCKER_CHAIN docker compose logs -f node
         ;;
+    pruner-logs)
+        echo "Showing pruner logs for $CHAIN..."
+        CHAIN=$DOCKER_CHAIN docker compose logs -f pruner
+        ;;
+    test-rpc)
+        echo "Testing RPC connectivity for $CHAIN..."
+        echo "Testing local RPC (from host):"
+        curl -s -X POST -H "Content-Type: application/json" \
+            -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
+            http://localhost:3001/evm | jq . 2>/dev/null || echo "Failed to connect to local RPC"
+        echo ""
+        echo "Testing external RPC:"
+        curl -s -X POST -H "Content-Type: application/json" \
+            -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
+            https://rpc.hyperliquid.xyz | jq . 2>/dev/null || echo "Failed to connect to external RPC"
+        ;;
     status)
         echo "Status of $CHAIN node:"
         CHAIN=$DOCKER_CHAIN docker compose ps
@@ -61,10 +77,24 @@ case $ACTION in
         CHAIN=$DOCKER_CHAIN PRUNE_HOURS=$PRUNE_HOURS docker compose up -d --build
         echo "Node rebuilt and started!"
         ;;
+    monitor)
+        echo "Opening monitoring dashboard..."
+        echo "🌐 Monitor URL: http://localhost:8080"
+        echo "📊 Health check: http://localhost:8080/health"
+        echo "Press Ctrl+C to stop monitoring"
+        ;;
+    config)
+        echo "Current configuration:"
+        echo "  Chain: $DOCKER_CHAIN"
+        echo "  Prune Hours: $PRUNE_HOURS"
+        echo "  Environment variables:"
+        echo "    CHAIN=$DOCKER_CHAIN"
+        echo "    PRUNE_HOURS=$PRUNE_HOURS"
+        ;;
     *)
         echo "Error: Unknown action '$ACTION'"
-        echo "Available actions: start, stop, restart, logs, status, rebuild"
-        echo "Usage: $0 [mainnet|testnet] [start|stop|logs|restart]"
+        echo "Available actions: start, stop, restart, logs, pruner-logs, status, rebuild, monitor, config, test-rpc"
+        echo "Usage: $0 [mainnet|testnet] [start|stop|logs|restart|monitor|config|test-rpc]"
         exit 1
         ;;
 esac 
