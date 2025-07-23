@@ -235,7 +235,7 @@ app.get('/api/status', async (req, res) => {
     }
     let archiveDifference = null;
     if (localBlock.success && archiveLocalBlock.success) {
-      archiveDifference = archiveLocalBlock.block - localBlock.block;
+      archiveDifference = externalBlock.block - archiveLocalBlock.block;
       console.log(
         `📊 Archive block difference calculated: ${archiveDifference}`
       );
