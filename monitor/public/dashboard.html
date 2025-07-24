@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HyperLiquid Node Monitor</title>
+    <title>HyperLiquid Mainnet Node Monitor</title>
     <style>
       body {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -137,6 +137,11 @@
           <h3>💾 Disk Usage</h3>
           <div id="disk-status">Loading...</div>
         </div>
+
+        <div class="status-card">
+          <h3>🧠 RAM Usage</h3>
+          <div id="ram-status">Loading...</div>
+        </div>
       </div>
 
       <div class="logs-section">
@@ -167,6 +172,14 @@
       function getDiskStatusClass(usagePercent) {
         if (!usagePercent) return 'status-unknown';
         const usage = parseInt(usagePercent);
+        if (usage > 90) return 'status-error';
+        if (usage > 80) return 'status-warning';
+        return 'status-good';
+      }
+
+      function getRamStatusClass(usagePercent) {
+        if (!usagePercent) return 'status-unknown';
+        const usage = parseFloat(usagePercent);
         if (usage > 90) return 'status-error';
         if (usage > 80) return 'status-warning';
         return 'status-good';
@@ -214,12 +227,12 @@
 
         document.getElementById('block-status').innerHTML = `
     <div class="metric">
-      <span class="metric-label">Local Block:</span>
-      <span class="metric-value">${localBlockText}</span>
-    </div>
-    <div class="metric">
-      <span class="metric-label">External Block:</span>
+      <span class="metric-label">External Node Public Block:</span>
       <span class="metric-value">${externalBlockText}</span>
+    </div>
+     <div class="metric">
+      <span class="metric-label">HL Node Local Block:</span>
+      <span class="metric-value">${localBlockText}</span>
     </div>
     <div class="metric">
       <span class="metric-label">Difference:</span>
@@ -280,6 +293,36 @@
             `;
       }
 
+      function updateRamStatus(data) {
+        const ram = data.ram;
+
+        if (!ram.success) {
+          document.getElementById('ram-status').innerHTML = `
+                    <div class="metric">
+                        <span class="metric-label">Error:</span>
+                        <span class="metric-value">${ram.error}</span>
+                    </div>
+                `;
+          return;
+        }
+
+        const statusClass = getRamStatusClass(ram.percentage);
+
+        document.getElementById('ram-status').innerHTML = `
+                <div class="metric">
+                    <span class="metric-label">Usage:</span>
+                    <span class="metric-value">${ram.usage}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Percentage:</span>
+                    <span class="metric-value">
+                        <span class="status-indicator ${statusClass}"></span>
+                        ${ram.percentage}%
+                    </span>
+                </div>
+            `;
+      }
+
       function updateLogs(data) {
         if (!data.success) {
           document.getElementById('logs-content').innerHTML = `
@@ -304,6 +347,7 @@
           updateContainerStatus(statusData);
           updateBlockStatus(statusData);
           updateDiskStatus(statusData);
+          updateRamStatus(statusData);
 
           // Update logs
           const logsResponse = await fetch('/api/logs');
@@ -321,6 +365,8 @@
           document.getElementById('block-status').innerHTML =
             'Error loading data';
           document.getElementById('disk-status').innerHTML =
+            'Error loading data';
+          document.getElementById('ram-status').innerHTML =
             'Error loading data';
           document.getElementById('logs-content').innerHTML =
             'Error loading data';

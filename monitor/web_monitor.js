@@ -169,6 +169,48 @@ async function getDiskUsage() {
   }
 }
 
+// Get RAM usage information
+async function getRamUsage() {
+  try {
+    console.log(
+      `🧠 Attempting to get RAM usage for container: ${NODE_CONTAINER_NAME}`
+    );
+
+    const result = await executeCommand(
+      `docker stats ${NODE_CONTAINER_NAME} --no-stream --format "table {{.MemUsage}}\t{{.MemPerc}}"`
+    );
+    console.log(`🧠 RAM usage result:`, result);
+
+    if (result.success) {
+      const lines = result.output.trim().split('\n');
+      console.log(`🧠 RAM usage lines:`, lines);
+
+      if (lines.length >= 2) {
+        const parts = lines[1].split(/\s+/);
+        console.log(`🧠 RAM usage parts:`, parts);
+
+        if (parts.length >= 2) {
+          const memUsage = parts[0];
+          const memPerc = parts[1].replace('%', '');
+
+          const ramInfo = {
+            success: true,
+            usage: memUsage,
+            percentage: memPerc,
+          };
+          console.log(`✅ RAM usage:`, ramInfo);
+          return ramInfo;
+        }
+      }
+    }
+    console.log(`❌ Could not get RAM usage`);
+    return { success: false, error: 'Could not get RAM usage' };
+  } catch (error) {
+    console.log(`💥 RAM usage error:`, error);
+    return { success: false, error: error.message };
+  }
+}
+
 // Get recent container logs
 async function getRecentLogs() {
   try {
@@ -227,6 +269,9 @@ app.get('/api/status', async (req, res) => {
     const diskUsage = await getDiskUsage();
     console.log('💾 Disk usage check completed');
 
+    const ramUsage = await getRamUsage();
+    console.log('🧠 RAM usage check completed');
+
     // Calculate block differences
     let blockDifference = null;
     if (localBlock.success && externalBlock.success) {
@@ -234,7 +279,7 @@ app.get('/api/status', async (req, res) => {
       console.log(`📊 Block difference calculated: ${blockDifference}`);
     }
     let archiveDifference = null;
-    if (localBlock.success && archiveLocalBlock.success) {
+    if (externalBlock.success && archiveLocalBlock.success) {
       archiveDifference = externalBlock.block - archiveLocalBlock.block;
       console.log(
         `📊 Archive block difference calculated: ${archiveDifference}`
@@ -252,6 +297,7 @@ app.get('/api/status', async (req, res) => {
         archiveDifference: archiveDifference,
       },
       disk: diskUsage,
+      ram: ramUsage,
     };
 
     console.log('✅ API Status response prepared');
