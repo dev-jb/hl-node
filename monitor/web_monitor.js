@@ -176,29 +176,76 @@ async function getRamUsage() {
       `🧠 Attempting to get RAM usage for container: ${NODE_CONTAINER_NAME}`
     );
 
-    const result = await executeCommand(
+    // Try to get memory info from inside the container first
+    const memInfoResult = await executeCommand(
+      `docker exec ${NODE_CONTAINER_NAME} cat /proc/meminfo`
+    );
+    console.log(`🧠 Memory info result:`, memInfoResult);
+
+    if (memInfoResult.success) {
+      const lines = memInfoResult.output.trim().split('\n');
+      console.log(`🧠 Memory info lines:`, lines);
+
+      let totalMem = 0;
+      let availableMem = 0;
+      let freeMem = 0;
+
+      for (const line of lines) {
+        if (line.startsWith('MemTotal:')) {
+          totalMem = parseInt(line.split(/\s+/)[1]);
+        } else if (line.startsWith('MemAvailable:')) {
+          availableMem = parseInt(line.split(/\s+/)[1]);
+        } else if (line.startsWith('MemFree:')) {
+          freeMem = parseInt(line.split(/\s+/)[1]);
+        }
+      }
+
+      if (totalMem > 0) {
+        const usedMem = totalMem - availableMem;
+        const percentage = ((usedMem / totalMem) * 100).toFixed(1);
+
+        const ramInfo = {
+          success: true,
+          total: `${(totalMem / 1024 / 1024).toFixed(1)}GB`,
+          used: `${(usedMem / 1024 / 1024).toFixed(1)}GB`,
+          available: `${(availableMem / 1024 / 1024).toFixed(1)}GB`,
+          percentage: percentage,
+        };
+        console.log(`✅ RAM usage from /proc/meminfo:`, ramInfo);
+        return ramInfo;
+      }
+    }
+
+    // Fallback to docker stats
+    const statsResult = await executeCommand(
       `docker stats ${NODE_CONTAINER_NAME} --no-stream --format "table {{.MemUsage}}\t{{.MemPerc}}"`
     );
-    console.log(`🧠 RAM usage result:`, result);
+    console.log(`🧠 Docker stats result:`, statsResult);
 
-    if (result.success) {
-      const lines = result.output.trim().split('\n');
-      console.log(`🧠 RAM usage lines:`, lines);
+    if (statsResult.success) {
+      const lines = statsResult.output.trim().split('\n');
+      console.log(`🧠 Docker stats lines:`, lines);
 
       if (lines.length >= 2) {
         const parts = lines[1].split(/\s+/);
-        console.log(`🧠 RAM usage parts:`, parts);
+        console.log(`🧠 Docker stats parts:`, parts);
 
         if (parts.length >= 2) {
           const memUsage = parts[0];
-          const memPerc = parts[1].replace('%', '');
+          const memPerc = parts[1];
+
+          // Handle cases where percentage might be "/" or other invalid values
+          let percentage = '0';
+          if (memPerc && memPerc !== '/' && memPerc !== 'N/A') {
+            percentage = memPerc.replace('%', '');
+          }
 
           const ramInfo = {
             success: true,
             usage: memUsage,
-            percentage: memPerc,
+            percentage: percentage,
           };
-          console.log(`✅ RAM usage:`, ramInfo);
+          console.log(`✅ RAM usage from docker stats:`, ramInfo);
           return ramInfo;
         }
       }

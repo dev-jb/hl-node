@@ -308,7 +308,32 @@
 
         const statusClass = getRamStatusClass(ram.percentage);
 
-        document.getElementById('ram-status').innerHTML = `
+        // Check if we have detailed RAM info (total, used, available) or just usage
+        if (ram.total && ram.used && ram.available) {
+          document.getElementById('ram-status').innerHTML = `
+                <div class="metric">
+                    <span class="metric-label">Total:</span>
+                    <span class="metric-value">${ram.total}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Used:</span>
+                    <span class="metric-value">${ram.used}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Available:</span>
+                    <span class="metric-value">${ram.available}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Usage:</span>
+                    <span class="metric-value">
+                        <span class="status-indicator ${statusClass}"></span>
+                        ${ram.percentage}%
+                    </span>
+                </div>
+            `;
+        } else {
+          // Fallback for docker stats format
+          document.getElementById('ram-status').innerHTML = `
                 <div class="metric">
                     <span class="metric-label">Usage:</span>
                     <span class="metric-value">${ram.usage}</span>
@@ -321,6 +346,7 @@
                     </span>
                 </div>
             `;
+        }
       }
 
       function updateLogs(data) {
