@@ -2,7 +2,11 @@
 
 ## Machine Specs
 
-Recommended minimum hardware: 4 CPU cores, 32 GB RAM, 200 GB disk.
+| Role          | vCPUs | RAM    | Storage    |
+| ------------- | ----- | ------ | ---------- |
+| Validator     | 32    | 128 GB | 1 TB SSD   |
+| Non-Validator | 16    | 64 GB  | 500 GB SSD |
+
 
 Currently only Ubuntu 24.04 is supported.
 
@@ -245,7 +249,6 @@ Binaries are signed for extra security. The public key is found at `pub_key.asc`
 
 2. **Verify the Binary:**
    Signatures are located at `{binary}.asc`.
-
    - **Testnet**:
      ```bash
      curl https://binaries.hyperliquid-testnet.xyz/Testnet/hl-visor.asc > hl-visor.asc
@@ -296,7 +299,6 @@ For more information about examples and all the data types that can be written, 
   ```
 
   To translate the state to JSON for examination:
-
   - **Testnet**:
     ```bash
     ./hl-node --chain Testnet translate-abci-state ~/hl/data/periodic_abci_states/{date}/{height}.rmp /tmp/out.json
@@ -396,6 +398,21 @@ The currently supported info requests on the local server are
     webData2 (does not compute assetCtxs, which do not depend on the user)
 ```
 
+The info server also supports requests that writes down large local snapshot data to a file. This can be a better way to get snapshot data if an info server is running, because it uses the latest state instead of an older snapshot file.
+
+The info request format is:
+
+```
+    {"type": "fileSnapshot", "request": <SnapshotRequest>, "outPath": <string>, "includeHeightInOutput": <bool>}
+```
+
+`<SnapshotRequest>` format is:
+
+```
+    {"type": "referrerStates"}
+    {"type": "l4Snapshots", "includeUsers": <bool>, "includeTriggerOrders": <bool>}
+```
+
 Some info requests such as `l2Book` are not currently supported, as they are only indexed by a small number of assets and can be easily polled or subscribed to within the standard rate limits.
 
 To ensure that the server information is up to date, `exchangeStatus` can be pinged periodically to compare L1 and local timestamps. The server information can be ignored when the L1 timestamp returned is sufficiently stale.
@@ -459,7 +476,8 @@ The native token on Testnet is **HYPE** with token address:
      ```bash
      ./hl-node --chain Mainnet --key <delegator-wallet-key> staking-withdrawal <wei>
      ```
-     The withdrawal will reflect in the exchange balance automatically once the unbonding period ends.
+
+   The withdrawal will reflect in the exchange balance automatically once the unbonding period ends.
 
 ---
 
@@ -667,37 +685,38 @@ Other validator profile options include:
 
 The community runs several independent root peers for non-validators to connect to on Mainnet. To run a non-validator on Mainnet, add at least one of these IP addresses to your `~/override_gossip_config.json`:
 
-```
-operator_name,root_ips
-ASXN,20.188.6.225
-ASXN,74.226.182.22
-B-Harvest,180.189.55.18
-B-Harvest,180.189.55.19
-Nansen x HypurrCollective,46.105.222.166
-Nansen x HypurrCollective,91.134.41.52
-Hypurrscan,13.230.78.76
-Hypurrscan,54.248.41.39
-Infinite Field,52.68.71.160
-Infinite Field,13.114.116.44
-LiquidSpirit x Rekt Gang,199.254.199.190
-LiquidSpirit x Rekt Gang,199.254.199.247
-Imperator.co,23.81.40.69
-Imperator.co,157.90.207.92
-Enigma,148.251.76.7
-Enigma,109.123.230.189
-TMNT,31.223.196.172
-TMNT,31.223.196.238
-HyperStake,91.134.71.237
-HyperStake,57.129.140.247
-ValiDAO,160.202.131.51
-ValiDAO,72.46.87.141
-Hyperbeat x P2P.org x Hypio,199.254.199.12
-Hyperbeat x P2P.org x Hypio,199.254.199.54
-Luganodes,45.250.255.111
-Luganodes,109.94.99.131
-HypurrCorea: SKYGG x DeSpread,8.220.222.129
-HypurrCorea: SKYGG x DeSpread,8.220.213.65
-```
+| Operator                      | Root IP         | Location       |
+| ----------------------------- | --------------- | -------------- |
+| ASXN                          | 64.31.48.111    | Japan          |
+| ASXN                          | 64.31.51.137    | Japan          |
+| B-Harvest                     | 180.189.55.18   | South Korea    |
+| B-Harvest                     | 180.189.55.19   | South Korea    |
+| Nansen x HypurrCollective     | 46.105.222.166  | France         |
+| Nansen x HypurrCollective     | 91.134.41.52    | France         |
+| Hypurrscan                    | 13.230.78.76    | Japan          |
+| Hypurrscan                    | 54.248.41.39    | Japan          |
+| Infinite Field                | 52.68.71.160    | Japan          |
+| Infinite Field                | 13.114.116.44   | Japan          |
+| LiquidSpirit x Rekt Gang      | 199.254.199.190 | Japan          |
+| LiquidSpirit x Rekt Gang      | 199.254.199.247 | Japan          |
+| Imperator.co                  | 23.81.40.69     | Japan          |
+| Imperator.co                  | 157.90.207.92   | Germany        |
+| Enigma                        | 148.251.76.7    | Germany        |
+| Enigma                        | 109.123.230.189 | Japan          |
+| TMNT                          | 31.223.196.172  | Japan          |
+| TMNT                          | 31.223.196.238  | Japan          |
+| HyperStake                    | 91.134.71.237   | France         |
+| HyperStake                    | 57.129.140.247  | United Kingdom |
+| ValiDAO                       | 160.202.131.51  | Germany        |
+| ValiDAO                       | 72.46.87.141    | Singapore      |
+| Hyperbeat x P2P.org x Hypio   | 199.254.199.12  | Japan          |
+| Hyperbeat x P2P.org x Hypio   | 199.254.199.54  | Japan          |
+| Luganodes                     | 45.250.255.111  | Japan          |
+| Luganodes                     | 109.94.99.131   | Japan          |
+| HypurrCorea: SKYGG x DeSpread | 8.220.222.129   | South Korea    |
+| HypurrCorea: SKYGG x DeSpread | 8.220.213.65    | South Korea    |
+| Purrposeful x HyBridge x PiP  | 144.168.36.162  | Japan          |
+| Purrposeful x HyBridge x PiP  | 181.41.140.106  | Japan          |
 
 ---
 
