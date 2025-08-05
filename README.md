@@ -7,6 +7,7 @@
 | Validator     | 32    | 128 GB | 1 TB SSD   |
 | Non-Validator | 16    | 64 GB  | 500 GB SSD |
 
+
 Currently only Ubuntu 24.04 is supported.
 
 Ports 4001 and 4002 are used for gossip and must be open to the public. Otherwise, the node IP address will be deprioritized by peers in the p2p network.
@@ -15,7 +16,198 @@ For lowest latency, run the node in Tokyo, Japan.
 
 ---
 
-## Setup
+## Run Using Docker (Recommended)
+
+### Quick Start
+
+This repository includes Docker configurations for both Mainnet and Testnet. You can run either network using environment variables.
+
+#### For Mainnet:
+
+```bash
+# Set environment variable and run
+export CHAIN=Mainnet
+docker compose up -d
+
+# Or run directly with environment variable
+CHAIN=Mainnet docker compose up -d
+```
+
+#### For Testnet:
+
+```bash
+# Set environment variable and run
+export CHAIN=Testnet
+docker compose up -d
+
+# Or run directly with environment variable
+CHAIN=Testnet docker compose up -d
+```
+
+### Using the Convenience Script
+
+For even easier management, use the included `run-node.sh` script:
+
+```bash
+# Start mainnet node (default: 48 hours pruning)
+./run-node.sh mainnet start
+
+# Start testnet node with custom prune hours (e.g., 24 hours)
+./run-node.sh testnet start 24
+
+# Start mainnet node with 72 hours pruning
+./run-node.sh mainnet start 72
+
+# Restart with custom prune hours (must specify hours again)
+./run-node.sh mainnet restart 24
+
+# View logs
+./run-node.sh mainnet logs
+./run-node.sh testnet logs
+
+# Stop node
+./run-node.sh mainnet stop
+./run-node.sh testnet stop
+
+# Restart node (maintains prune hours setting)
+./run-node.sh mainnet restart
+./run-node.sh testnet restart
+
+# Check status
+./run-node.sh mainnet status
+./run-node.sh testnet status
+
+# Rebuild and restart
+./run-node.sh mainnet rebuild
+./run-node.sh testnet rebuild
+
+# Open monitoring dashboard
+./run-node.sh mainnet monitor
+./run-node.sh testnet monitor
+
+# Check configuration
+./run-node.sh mainnet config
+./run-node.sh testnet config
+
+# View pruner logs
+./run-node.sh mainnet pruner-logs
+./run-node.sh testnet pruner-logs
+
+# Test RPC connectivity
+./run-node.sh mainnet test-rpc
+./run-node.sh testnet test-rpc
+
+# View monitor logs
+./run-node.sh mainnet monitor-logs
+./run-node.sh testnet monitor-logs
+```
+
+**Prune Hours Configuration:**
+
+- Default: 48 hours (2 days)
+- Can be customized as the third parameter: `./run-node.sh [chain] [action] [hours]`
+- Examples: `24` (1 day), `72` (3 days), `168` (1 week)
+- **Important**: You must specify the hours parameter for all commands to use custom prune hours
+- Example: `./run-node.sh mainnet start 24` (starts with 24-hour pruning)
+
+**Monitoring Dashboard:**
+
+- Web interface available at `http://localhost:8080`
+- Real-time monitoring of container health, block synchronization, and disk usage
+- Compares local RPC block numbers with external RPC
+- Auto-refreshes every 30 seconds
+- Health check endpoint: `http://localhost:8080/health`
+
+**RPC Connectivity:**
+
+- Local RPC endpoint: `http://localhost:3001/evm` (accessible from host)
+- Internal RPC endpoint: `http://node:3001/evm` (accessible from monitor container)
+- External RPC endpoint: `https://rpc.hyperliquid.xyz` (for comparison)
+- Use `./run-node.sh [chain] test-rpc` to test connectivity
+
+### Docker Features
+
+- **Unified Configuration**: Single Dockerfile and docker-compose.yml for both networks
+- **Persistent Data**: Data is stored in Docker volumes and persists across container restarts
+- **Automatic Pruning**: Includes a pruner service to manage disk space
+- **Real-time Monitoring**: Web-based dashboard for node health and block synchronization
+- **Gossip Configuration**: Mounts `override_gossip_config.json` for custom peer configuration
+- **Port Exposure**: Exposes gossip ports (4000-4010), RPC ports (3000-3010), and monitor port (8080)
+
+### Docker Commands
+
+```bash
+# Build and start services
+docker compose up -d
+
+# View logs
+docker compose logs -f node
+
+# Stop services
+docker compose down
+
+# Stop and remove volumes (WARNING: This will delete all data)
+docker compose down -v
+
+# Rebuild and restart
+docker compose up -d --build
+
+# Access container shell
+docker compose exec node bash
+```
+
+### Data Persistence
+
+The node data is stored in a Docker volume named `hl-data`. This data persists even if you:
+
+- Stop the containers (`docker compose down`)
+- Remove the containers
+- Update the Docker images
+
+To completely remove all data, use:
+
+```bash
+docker compose down -v
+```
+
+### Environment Configuration
+
+You can set the chain type using environment variables:
+
+```bash
+# Method 1: Export environment variable
+export CHAIN=Mainnet
+docker-compose up -d
+
+# Method 2: Use .env file
+echo "CHAIN=Mainnet" > .env
+docker compose up -d
+
+# Method 3: Inline environment variable
+CHAIN=Testnet docker compose up -d
+
+# Method 4: With custom prune hours
+CHAIN=Mainnet PRUNE_HOURS=24 docker compose up -d
+```
+
+### Custom Configuration
+
+You can customize the node behavior by modifying the `override_gossip_config.json` file. This file is mounted into the container and allows you to:
+
+- Specify custom root node IPs
+- Configure peer discovery settings
+- Set reserved peer IPs
+
+### Troubleshooting
+
+- **Check container status**: `docker compose ps`
+- **View logs**: `docker compose logs -f node`
+- **Rebuild if needed**: `docker compose up -d --build`
+- **Check volume usage**: `docker volume ls` and `docker volume inspect hl-data`
+
+---
+
+## Manual Setup (Alternative)
 
 ### Configure Chain
 
@@ -241,6 +433,7 @@ The native token on Testnet is **HYPE** with token address:
 
 1. **Staking Deposit:**
    Transfer tokens from your spot balance into the staking balance:
+
    - **Testnet:**
      ```bash
      ./hl-node --chain Testnet --key <delegator-wallet-key> staking-deposit <wei>
@@ -252,6 +445,7 @@ The native token on Testnet is **HYPE** with token address:
 
 2. **Delegate Tokens:**
    Delegate tokens to a validator:
+
    - **Testnet:**
      ```bash
      ./hl-node --chain Testnet --key <delegator-wallet-key> delegate <validator-address> <amount-in-wei>
@@ -264,6 +458,7 @@ The native token on Testnet is **HYPE** with token address:
    Optionally, add `--undelegate` to undelegate from the validator.
 
 3. **View Delegations:**
+
    - **Testnet:**
      ```bash
      curl -X POST --header "Content-Type: application/json" --data '{ "type": "delegations", "user": <delegator-address>}' https://api.hyperliquid-testnet.xyz/info

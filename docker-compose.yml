@@ -1,20 +1,43 @@
-name: "hyperliquid"
+version: '3.8'
 
 services:
   node:
     restart: unless-stopped
-    build: .
+    build:
+      context: .
+      args:
+        CHAIN: ${CHAIN:-Mainnet}
     ports:
-      - "4000-4010:4000-4010"
+      - '4000-4010:4000-4010'
+      - '3000-3010:3000-3010'
     volumes:
-      - hl-data:/home/hluser/hl/data
+      - hl-data:/home/hluser/hl
+      - ./override_gossip_config.json:/home/hluser/override_gossip_config.json:ro
+    environment:
+      - CHAIN=${CHAIN:-Mainnet}
 
   pruner:
     restart: unless-stopped
     build: ./pruner
     volumes:
-      - hl-data:/home/hluser/hl/data
+      - hl-data:/home/hluser/hl
+    environment:
+      - PRUNE_HOURS=${PRUNE_HOURS:-48}
 
+  monitor:
+    restart: unless-stopped
+    build: ./monitor
+    ports:
+      - '8080:8080'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - LOCAL_RPC_URL=http://hl-node-node-1:3001/evm
+      - EXTERNAL_RPC_URL=${EXTERNAL_RPC_URL:-https://rpc.hyperliquid.xyz}
+      - ARCHIVE_LOCAL_RPC_URL=${ARCHIVE_LOCAL_RPC_URL:-http://archive-node-1:8545}
+      - NODE_CONTAINER_NAME=${NODE_CONTAINER_NAME:-hl-node-node-1}
+    depends_on:
+      - node
 
 volumes:
   hl-data:

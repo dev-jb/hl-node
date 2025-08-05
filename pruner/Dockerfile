@@ -19,5 +19,5 @@ COPY cron/ /etc/
 RUN chmod 0644 /etc/cron.d/* && \
     chmod +x /home/$USERNAME/scripts/* && chown -R $USERNAME:$USERNAME /home/$USERNAME/scripts
 
-# Start cron service directly
-CMD ["bash", "-c", "crontab /etc/cron.d/prune && /usr/sbin/cron -f -L 15"]
+# Start cron service with logging
+CMD ["/home/hluser/scripts/startup.sh"]

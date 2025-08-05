@@ -7,6 +7,8 @@ EXCLUDES=("visor_child_stderr")
 
 # Log startup for debugging
 echo "$(date): Prune script started" >> /proc/1/fd/1
+echo "$(date): Environment variables:" >> /proc/1/fd/1
+echo "$(date):   PRUNE_HOURS=$PRUNE_HOURS" >> /proc/1/fd/1
 
 # Check if data directory exists
 if [ ! -d "$DATA_PATH" ]; then
@@ -28,8 +30,15 @@ for dir in "${EXCLUDES[@]}"; do
 done
 
 # Delete data older than 48 hours = 60 minutes * 48 hours
-HOURS=$((60*48))
+# Can be overridden by PRUNE_HOURS environment variable
+PRUNE_HOURS=${PRUNE_HOURS:-48}
+HOURS=$((60*PRUNE_HOURS))
+echo "$(date): Configuration:" >> /proc/1/fd/1
+echo "$(date):   PRUNE_HOURS=$PRUNE_HOURS" >> /proc/1/fd/1
+echo "$(date):   HOURS=$HOURS" >> /proc/1/fd/1
+echo "$(date): Pruning data older than $PRUNE_HOURS hours ($HOURS minutes)" >> /proc/1/fd/1
 find "$DATA_PATH" -mindepth 1 "${PRUNE_ARGS[@]}" -type f -mmin +$HOURS -exec rm {} +
+
 
 # Get directory size after pruning
 size_after=$(du -sh "$DATA_PATH" | cut -f1)
